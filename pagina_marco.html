@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Descuentos - Marco</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        .results.show {
+            display: block;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .result-label {
+            color: #666;
+            font-weight: 600;
+        }
+        .result-value {
+            color: #333;
+            font-weight: 700;
+        }
+        .result-item.total {
+            border-top: 2px solid #ddd;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+        .result-value.total {
+            color: #28a745;
+            font-size: 20px;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+            font-size: 14px;
+        }
+        .error.show {
+            display: block;
+        }
+        .history {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+        .history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .history-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            font-size: 14px;
+            color: #666;
+        }
+        .clear-btn {
+            background: #dc3545;
+            margin-top: 10px;
+        }
+        .clear-btn:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Calculadora de Descuentos</h1>
+        <p class="subtitle">Descuento único del 10% a partir de los $10.000 pesos en adelante</p>
+        
+        <div class="form-group">
+            <label for="monto">Ingrese el monto de la compra:</label>
+            <input 
+                type="number" 
+                id="monto" 
+                placeholder="" 
+                step="0.01"
+                min="0"
+                autocomplete="off"
+                required
+            >
+            <div class="error" id="error"></div>
+        </div>
+        
+        <button onclick="calcularDescuento()">Calcular Descuento</button>
+        
+        <div class="results" id="results">
+            <div class="result-item">
+                <span class="result-label">Monto de compra:</span>
+                <span class="result-value" id="montoResult">$0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Descuento:</span>
+                <span class="result-value" id="descuentoResult">$0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Porcentaje:</span>
+                <span class="result-value" id="porcentajeResult">0%</span>
+            </div>
+            <div class="result-item total">
+                <span class="result-label">Total a pagar:</span>
+                <span class="result-value total" id="totalResult">$0</span>
+            </div>
+        </div>
+
+        <div class="history">
+            <h3>📋 Historial de cálculos</h3>
+            <div id="historyList"></div>
+            <button class="clear-btn" onclick="limpiarHistorial()" id="clearBtn" style="display: none;">Limpiar historial</button>
+        </div>
+    </div>
+
+    <script>
+        let historial = [];
+
+        function calcularDescuento() {
+            const inputMonto = document.getElementById('monto').value.trim();
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+
+            // Validar entrada
+            if (!inputMonto) {
+                mostrarError('Por favor, ingrese un monto.');
+                resultsDiv.classList.remove('show');
+                return;
+            }
+
+            const monto = parseFloat(inputMonto);
+
+            // Validar número válido
+            if (isNaN(monto)) {
+                mostrarError('¡ERROR! Ingrese un valor numérico válido.');
+                resultsDiv.classList.remove('show');
+                return;
+            }
+
+            // Validar número negativo
+            if (monto < 0) {
+                mostrarError('¡ERROR! El monto no puede ser negativo.');
+                resultsDiv.classList.remove('show');
+                return;
+            }
+
+            errorDiv.classList.remove('show');
+
+            // Calcular descuento único del 10% desde $10.000
+            let descuento = 0;
+            let porcentaje = 0;
+
+            if (monto >= 10000) {
+                descuento = monto * 0.10;
+                porcentaje = 10;
+            }
+
+            const total = monto - descuento;
+
+            // Mostrar resultados sin decimales con puntos en miles
+            document.getElementById('montoResult').textContent = '$' + formatearNumero(monto);
+            document.getElementById('descuentoResult').textContent = '$' + formatearNumero(descuento);
+            document.getElementById('porcentajeResult').textContent = porcentaje + '%';
+            document.getElementById('totalResult').textContent = '$' + formatearNumero(total);
+            resultsDiv.classList.add('show');
+
+            // Agregar al historial
+            agregarAlHistorial(monto, descuento, porcentaje, total);
+
+            // Limpiar input
+            document.getElementById('monto').value = '';
+        }
+
+        // Función para formatear números con puntos de miles
+        function formatearNumero(numero) {
+            return Math.round(numero).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = mensaje;
+            errorDiv.classList.add('show');
+        }
+
+        function agregarAlHistorial(monto, descuento, porcentaje, total) {
+            const fecha = new Date().toLocaleString('es-ES');
+            historial.push({
+                fecha,
+                monto,
+                descuento,
+                porcentaje,
+                total
+            });
+
+            actualizarHistorial();
+        }
+
+        function actualizarHistorial() {
+            const historyList = document.getElementById('historyList');
+            const clearBtn = document.getElementById('clearBtn');
+
+            if (historial.length === 0) {
+                historyList.innerHTML = '<p style="color: #999; text-align: center;">No hay cálculos aún.</p>';
+                clearBtn.style.display = 'none';
+                return;
+            }
+
+            clearBtn.style.display = 'block';
+            historyList.innerHTML = historial.map((item, index) => `
+                <div class="history-item">
+                    <strong>#${historial.length - index}</strong> - ${item.fecha}<br>
+                    Monto: $${Math.round(item.monto).toLocaleString('es-ES')} | Descuento: ${item.porcentaje}% ($${Math.round(item.descuento).toLocaleString('es-ES')}) | Total: $${Math.round(item.total).toLocaleString('es-ES')}
+                </div>
+            `).join('');
+        }
+
+        function limpiarHistorial() {
+            historial = [];
+            actualizarHistorial();
+            document.getElementById('results').classList.remove('show');
+        }
+
+        // Permitir calcular con Enter
+        document.getElementById('monto').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                calcularDescuento();
+            }
+        });
+    </script>
+</body>
+</html>
